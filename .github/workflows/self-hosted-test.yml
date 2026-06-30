@@ -5,17 +5,19 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
     runs-on: self-hosted
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Print runner info
         run: |
           echo "Hello from self-hosted runner"
+          echo "Event: $GITHUB_EVENT_NAME"
+          echo "Ref: $GITHUB_REF"
+          echo "SHA: $GITHUB_SHA"
           uname -a
           pwd
