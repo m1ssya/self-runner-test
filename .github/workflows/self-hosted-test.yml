@@ -11,16 +11,24 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - name: Print runner info
+        shell: powershell
         run: |
-          echo "Hello from self-hosted runner"
-          echo "Event: $GITHUB_EVENT_NAME"
-          echo "Ref: $GITHUB_REF"
-          echo "SHA: $GITHUB_SHA"
-          uname -a
-          pwd
+          Write-Host "Hello from Windows self-hosted runner"
+          Write-Host "Runner name: $env:RUNNER_NAME"
+          Write-Host "Runner OS: $env:RUNNER_OS"
+          Write-Host "Runner architecture: $env:RUNNER_ARCH"
+          Write-Host "Event: $env:GITHUB_EVENT_NAME"
+          Write-Host "Ref: $env:GITHUB_REF"
+          Write-Host "SHA: $env:GITHUB_SHA"
+          Write-Host "OS version: $([System.Environment]::OSVersion.VersionString)"
+          Write-Host "Working directory: $((Get-Location).Path)"
+
+          if ($env:RUNNER_OS -ne "Windows") {
+            throw "Expected a Windows runner, but got '$env:RUNNER_OS'."
+          }
 
   insecure-command-scan-test:
     runs-on: self-hosted
