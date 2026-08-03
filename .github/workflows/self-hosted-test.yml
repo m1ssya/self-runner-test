@@ -19,12 +19,24 @@ jobs:
       EXPECTED_RUNNER_ARCH: X64
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - name: Check out repository with Git
+        shell: bash
+        run: |
+          checkout_dir="${RUNNER_TEMP}/self-runner-test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          mkdir -p "$checkout_dir"
+          git -C "$checkout_dir" init
+          git -C "$checkout_dir" remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git -C "$checkout_dir" fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git -C "$checkout_dir" checkout --force --detach FETCH_HEAD
+
+          printf 'CHECKOUT_DIR=%s\n' "$checkout_dir" >>"$GITHUB_ENV"
 
       - name: Run Linux runner diagnostics
         shell: bash
-        run: bash scripts/verify-self-hosted-runner.sh
+        run: |
+          VERIFICATION_WORKSPACE="$CHECKOUT_DIR" \
+            bash "$CHECKOUT_DIR/scripts/verify-self-hosted-runner.sh"
 
   insecure-command-scan-test:
     runs-on: self-hosted

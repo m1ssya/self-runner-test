@@ -4,6 +4,7 @@ set -Eeuo pipefail
 
 readonly expected_os="${EXPECTED_RUNNER_OS:-Linux}"
 readonly expected_arch="${EXPECTED_RUNNER_ARCH:-X64}"
+readonly verification_workspace="${VERIFICATION_WORKSPACE:-${GITHUB_WORKSPACE:-}}"
 
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
@@ -50,10 +51,12 @@ case "$GITHUB_EVENT_NAME" in
   *) fail "Unsupported GitHub event '${GITHUB_EVENT_NAME}'." ;;
 esac
 
+[[ -n "$verification_workspace" ]] || fail "Verification workspace is not set."
+
 command -v git >/dev/null 2>&1 || fail "git is not available on PATH."
 command -v bash >/dev/null 2>&1 || fail "bash is not available on PATH."
 
-cd "$GITHUB_WORKSPACE"
+cd "$verification_workspace"
 
 readonly checked_out_sha="$(git rev-parse HEAD)"
 assert_equal "Checked-out commit" "$GITHUB_SHA" "$checked_out_sha"
@@ -65,13 +68,13 @@ printf 'Runner architecture: %s\n' "$RUNNER_ARCH"
 printf 'Event: %s\n' "$GITHUB_EVENT_NAME"
 printf 'Ref: %s\n' "$GITHUB_REF"
 printf 'SHA: %s\n' "$GITHUB_SHA"
-printf 'Workspace: %s\n' "$GITHUB_WORKSPACE"
+printf 'Workspace: %s\n' "$verification_workspace"
 printf 'Kernel: %s\n' "$(uname -a)"
 printf 'Git: %s\n' "$(git --version)"
 printf 'Bash: %s\n' "${BASH_VERSION}"
 printf 'CPU count: %s\n' "$(getconf _NPROCESSORS_ONLN)"
 printf 'Disk usage:\n'
-df -h "$GITHUB_WORKSPACE"
+df -h "$verification_workspace"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {

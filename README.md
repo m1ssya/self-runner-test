@@ -12,10 +12,12 @@ the following labels:
 - `X64`
 
 For pull requests targeting `main`, the workflow checks out the merge commit
-and runs `scripts/verify-self-hosted-runner.sh`. The script fails when the job is
-scheduled on an unexpected operating system or architecture. It also verifies
-the checked-out commit, prints basic host diagnostics, and writes a concise
-summary to the GitHub Actions job summary.
+with Git commands and runs `scripts/verify-self-hosted-runner.sh`. The explicit
+checkout keeps the workflow compatible with repositories that allow only local
+Actions. The script fails when the job is scheduled on an unexpected operating
+system or architecture. It also verifies the checked-out commit, prints basic
+host diagnostics, and writes a concise summary to the GitHub Actions job
+summary.
 
 The workflow can also be started manually:
 
