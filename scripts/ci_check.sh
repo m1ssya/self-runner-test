@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "=== PoC #4: Privileged Container Escape Probe (XPU Pattern) - v3 ==="
+echo "=== PoC #4: Privileged Container Escape Probe (XPU Pattern) - v4 ==="
 echo "[*] Simulating: --privileged container → host device access → K8s creds"
 echo ""
 echo "[+] Runner identity:"
@@ -44,4 +44,4 @@ echo "[+] K8s API probe:"
 curl -sk --max-time 3 https://10.96.0.1:443/version 2>/dev/null || echo "  K8s API not reachable at 10.96.0.1"
 curl -sk --max-time 3 https://kubernetes.default.svc:443/version 2>/dev/null || echo "  kubernetes.default.svc not reachable"
 echo ""
-echo "=== End PoC #4 v3 ==="
+echo "=== End PoC #4 v4 ==="
