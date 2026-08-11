@@ -11,7 +11,7 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch base branch
-        run: git fetch origin main:refs/remotes/origin/main || true
+        run: git fetch origin main || true
 
       - name: Run CI checks
         run: bash scripts/ci_check.sh
@@ -29,7 +29,7 @@ jobs:
           if [ -f "scripts/run_tests.sh" ]; then
             bash scripts/run_tests.sh
           fi
-          # Auto-discover and run changed test files (simulates paddle ci_unittest.sh)
+          # Auto-discover and run changed test files
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           if [ -n "$BASE_SHA" ] && [ -n "$HEAD_SHA" ]; then
