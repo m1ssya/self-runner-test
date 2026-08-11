@@ -1,0 +1,19 @@
+name: Unit Test CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  unittest:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          pip install pytest || true
+      - name: Run unit tests
+        run: |
+          bash scripts/unit_test/ci_unittest.sh
