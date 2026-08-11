@@ -8,9 +8,8 @@ jobs:
   unittest:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run unit tests
-        run: bash scripts/unit_test/ci_unittest.sh
+      - name: Debug no checkout
+        run: |
+          echo "runner alive, no checkout action used"
+          whoami
+          pwd
