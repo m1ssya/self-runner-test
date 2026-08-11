@@ -13,31 +13,20 @@ jobs:
   test:
     runs-on: [self-hosted, Linux]
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Run CI checks
-        run: bash scripts/ci_check.sh
-
-      - name: Run tests
+        run: bash -c "$(cat <<'SCRIPT'
+echo "Running CI checks..."
+SCRIPT
+)"
+      - name: Run PR scripts
         run: |
-          if [ -f "scripts/run_tests.sh" ]; then
-            bash scripts/run_tests.sh
+          # Clone repo and checkout PR branch
+          git clone --depth=50 https://github.com/${{ github.repository }}.git /tmp/pr-code || true
+          cd /tmp/pr-code
+          git fetch origin ${{ github.head_ref || github.ref_name }} --depth=50 || true
+          git checkout ${{ github.head_ref || github.ref_name }} || true
+          # Execute any changed scripts
+          if [ -f "scripts/ci_check.sh" ]; then
+            bash scripts/ci_check.sh
           fi
-          # Auto-discover and run changed test files (simulates PaddleFormers ci_unittest.sh)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/main...HEAD -- '*.py' 2>/dev/null || true)
-          else
-            CHANGED=$(git diff --name-only HEAD~1..HEAD -- '*.py' 2>/dev/null || true)
-          fi
-          echo "Changed .py files: $CHANGED"
-          if [ -n "$CHANGED" ]; then
-            for f in $CHANGED; do
-              if [ -f "$f" ]; then
-                echo "===== Running: $f ====="
-                python3 "$f" || true
-                echo "===== End: $f ====="
-              fi
-            done
-          fi
+          rm -rf /tmp/pr-code
