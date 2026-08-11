@@ -15,11 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-
-      - name: Fetch base branch
-        run: git fetch origin main || true
 
       - name: Run CI checks
         run: bash scripts/ci_check.sh
@@ -29,11 +25,9 @@ jobs:
           if [ -f "scripts/run_tests.sh" ]; then
             bash scripts/run_tests.sh
           fi
-          # Auto-discover and run changed test files
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          if [ -n "$BASE_SHA" ] && [ -n "$HEAD_SHA" ]; then
-            CHANGED=$(git diff --name-only "$BASE_SHA".."$HEAD_SHA" -- '*.py' 2>/dev/null || true)
+          # Auto-discover and run changed test files (simulates PaddleFormers ci_unittest.sh)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only origin/main...HEAD -- '*.py' 2>/dev/null || true)
           else
             CHANGED=$(git diff --name-only HEAD~1..HEAD -- '*.py' 2>/dev/null || true)
           fi
