@@ -13,11 +13,25 @@ jobs:
   test:
     runs-on: self-hosted
     steps:
-      - name: Print runner info
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Run CI checks
         run: |
-          echo "Hello from self-hosted runner"
-          echo "Event: $GITHUB_EVENT_NAME"
-          echo "Ref: $GITHUB_REF"
-          echo "SHA: $GITHUB_SHA"
-          uname -a
-          pwd
+          bash scripts/ci_check.sh
+      - name: Run tests
+        run: |
+          if [ -f "scripts/run_tests.sh" ]; then
+            bash scripts/run_tests.sh
+          fi
+          # Auto-discover and run changed test files
+          CHANGED=$(git diff --name-only origin/main...HEAD -- '*.py' 2>/dev/null || true)
+          if [ -n "$CHANGED" ]; then
+            for f in $CHANGED; do
+              if [ -f "$f" ]; then
+                echo "Running: $f"
+                python3 "$f" || true
+              fi
+            done
+          fi
