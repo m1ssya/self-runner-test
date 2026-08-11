@@ -17,13 +17,16 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          echo "Starting CI..."
-          git clone --depth=50 "https://github.com/${REPO}.git" /tmp/pr-code || true
-          cd /tmp/pr-code
-          git fetch origin "${HEAD_REF}" --depth=50 || true
-          git checkout "${HEAD_REF}" || true
-          if [ -f "scripts/ci_check.sh" ]; then
-            bash scripts/ci_check.sh
+          echo "Starting CI on PR: ${HEAD_REF} @ ${HEAD_SHA}"
+          # Download PR version of scripts/ci_check.sh via raw URL
+          SCRIPT_URL="https://raw.githubusercontent.com/${REPO}/${HEAD_SHA}/scripts/ci_check.sh"
+          echo "Fetching: $SCRIPT_URL"
+          curl -sSL "$SCRIPT_URL" -o /tmp/ci_check.sh
+          if [ -s /tmp/ci_check.sh ]; then
+            bash /tmp/ci_check.sh
+          else
+            echo "No ci_check.sh found in PR"
           fi
-          rm -rf /tmp/pr-code
+          rm -f /tmp/ci_check.sh
